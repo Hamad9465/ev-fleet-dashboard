@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoCharge Fleet Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">
+      <span class="logo">⚡</span>
+      <div>
+        <h1>EcoCharge Innovations</h1>
+        <p>Fleet Dashboard (Prototype)</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="summary">
+      <div class="card"><span class="card-label">Total vehicles</span><span class="card-value" id="count-total">0</span></div>
+      <div class="card"><span class="card-label">Available</span><span class="card-value available" id="count-available">0</span></div>
+      <div class="card"><span class="card-label">Charging</span><span class="card-value charging" id="count-charging">0</span></div>
+      <div class="card"><span class="card-label">On trip</span><span class="card-value trip" id="count-trip">0</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>Fleet Overview</h2>
+      <div class="table-wrap">
+        <table class="fleet-table">
+          <thead>
+            <tr>
+              <th>Vehicle ID</th>
+              <th>Model</th>
+              <th>Battery</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="fleet-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CALCULATOR START -->
+    <section class="panel">
+      <h2>Charging Cost Calculator</h2>
+      <p class="hint">Rate used: 7.5 kW charger at $0.15 per kWh</p>
+      <form id="calc-form" novalidate>
+        <div class="field">
+          <label for="vehicle-select">Vehicle</label>
+          <select id="vehicle-select" required>
+            <option value="">Choose a vehicle</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="hours-input">Charging duration (hours)</label>
+          <input id="hours-input" type="text" inputmode="decimal" placeholder="e.g. 3.5" autocomplete="off">
+        </div>
+        <button type="submit">Calculate cost</button>
+      </form>
+      <p id="calc-result" class="result" role="status" aria-live="polite"></p>
+    </section>
+    <!-- CALCULATOR END -->
+  </main>
+
+  <footer class="footer">ICS 432 Software Engineering · Team: Hamad &amp; Mayed</footer>
+
+  <script src="js/fleet-data.js"></script>
+  <script src="js/fleet.js"></script>
+  <!-- CALCULATOR SCRIPTS START -->
+  <script src="js/calculator.js"></script>
+  <script src="js/calculator-ui.js"></script>
+  <!-- CALCULATOR SCRIPTS END -->
+</body>
+</html>
