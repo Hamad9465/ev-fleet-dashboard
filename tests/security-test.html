@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XSS Security Test</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .sec-wrap { max-width: 1200px; margin: 30px auto; padding: 0 16px; }
+    #sec-summary { font-size: 18px; font-weight: 700; padding: 12px; border-radius: 8px; }
+    .all-pass { background: #e3f5ea; color: #157a41; }
+    .some-fail { background: #fde8e8; color: #d64545; }
+    #sec-list { list-style: none; padding: 0; }
+    #sec-list li { font-family: Consolas, monospace; padding: 8px 10px; margin: 6px 0; border-radius: 6px; background: #fff; border-left: 5px solid; white-space: pre-wrap; }
+    #sec-list li.pass { border-color: #1f9d55; }
+    #sec-list li.fail { border-color: #d64545; }
+  </style>
+</head>
+<body>
+  <div class="sec-wrap">
+    <h1>Security Test: Cross-Site Scripting (XSS)</h1>
+    <p>This page loads our real <code>js/fleet.js</code> but gives it fake vehicles with attack code
+      inside the ID, model and status. If our code was unsafe, the attack code would run and set a flag.
+      Results show after 1 second (so image based attacks have time to fire).</p>
+    <p id="sec-summary">Running...</p>
+    <ul id="sec-list"></ul>
+
+    <h2>The fleet table, drawn with the attack data</h2>
+    <p>You should see the attack code printed as plain text below, not run.</p>
+
+    <!-- same elements as index.html so fleet.js can draw into them -->
+    <section class="summary">
+      <div class="card"><span class="card-label">Total</span><span class="card-value" id="count-total">0</span></div>
+      <div class="card"><span class="card-label">Available</span><span class="card-value" id="count-available">0</span></div>
+      <div class="card"><span class="card-label">Charging</span><span class="card-value" id="count-charging">0</span></div>
+      <div class="card"><span class="card-label">On trip</span><span class="card-value" id="count-trip">0</span></div>
+    </section>
+    <div class="table-wrap">
+      <table class="fleet-table">
+        <thead><tr><th>Vehicle ID</th><th>Model</th><th>Battery</th><th>Status</th></tr></thead>
+        <tbody id="fleet-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // If any attack runs, it calls this and we record which one
+    window.xssRan = [];
+    window.markXss = function (name) { window.xssRan.push(name); };
+
+    // fake fleet data with attacks hidden inside (this replaces js/fleet-data.js)
+    const payloads = [
+      { name: "script tag", code: "<script>markXss('script tag')<\/script>" },
+      { name: "img onerror", code: "<img src=x onerror=\"markXss('img onerror')\">" },
+      { name: "svg onload", code: "<svg onload=\"markXss('svg onload')\"></svg>" },
+      { name: "breaking out of HTML", code: "\"><img src=x onerror=\"markXss('breakout')\">" }
+    ];
+
+    const fleet = [
+      { id: payloads[0].code, model: "Test Car 1", battery: 50, status: "Available" },
+      { id: "EV-T2", model: payloads[1].code, battery: 50, status: "Charging" },
+      { id: "EV-T3", model: payloads[2].code, battery: 50, status: "On Trip" },
+      { id: "EV-T4", model: "Test Car 4", battery: 50, status: payloads[3].code }
+    ];
+  </script>
+
+  <!-- the real file from our app -->
+  <script src="../js/fleet.js"></script>
+
+  <script>
+    setTimeout(function () {
+      const list = document.getElementById("sec-list");
+      const summary = document.getElementById("sec-summary");
+      const pageText = document.getElementById("fleet-body").textContent;
+      let passed = 0;
+
+      payloads.forEach(function (p) {
+        const didNotRun = window.xssRan.length === 0 || !window.xssRan.some(function (n) {
+          return p.code.indexOf(n) !== -1;
+        });
+        const shownAsText = pageText.indexOf(p.code) !== -1;
+        const ok = didNotRun && shownAsText;
+        if (ok) passed++;
+
+        const item = document.createElement("li");
+        item.className = ok ? "pass" : "fail";
+        item.textContent = (ok ? "PASS  " : "FAIL  ") + p.name + ": " +
+          (didNotRun ? "did not run" : "RAN!") + ", " +
+          (shownAsText ? "shown as plain text" : "not shown as text");
+        list.appendChild(item);
+      });
+
+      // extra check: no new <script>, <img> or <svg> elements were created in the table
+      const injected = document.querySelectorAll("#fleet-body script, #fleet-body img, #fleet-body svg").length;
+      const item = document.createElement("li");
+      item.className = injected === 0 ? "pass" : "fail";
+      item.textContent = (injected === 0 ? "PASS  " : "FAIL  ") + "no HTML elements were injected into the table (" + injected + " found)";
+      list.appendChild(item);
+      if (injected === 0) passed++;
+
+      const total = payloads.length + 1;
+      summary.textContent = passed + " of " + total + " security checks passed";
+      summary.className = passed === total ? "all-pass" : "some-fail";
+    }, 1000);
+  </script>
+</body>
+</html>
